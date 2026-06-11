@@ -1,5 +1,4 @@
 local HttpService = game:GetService("HttpService")
-local TweenService = game:GetService("TweenService")
 
 -- Ссылка на твой JSON-файл
 local JSON_URL = "https://raw.githubusercontent.com/Mishik111/scripts/refs/heads/main/scripts.json"
@@ -32,8 +31,8 @@ end
 
 -- Создаем главное окно хаба
 local Window = Fluent:CreateWindow({
-    Title = "1337 Hub",
-    SubTitle = "by 1337gta5rp_lame",
+    Title = "Mishik Hub",
+    SubTitle = "by Mishik111",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
@@ -41,20 +40,18 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
--- Добавляем вкладку для скриптов
+-- ИСПРАВЛЕНО: Во Fluent используется метод :NewTab(), а не :CreateTab()
 local Tabs = {
-    Scripts = Window:CreateTab({
+    Scripts = Window:NewTab({
         Title = "Игры / Скрипты",
         Icon = "gamepad"
     })
 }
 
--- Функция для красивого закрытия хаба и запуска скрипта
+-- Функция для закрытия хаба и запуска скрипта
 local function launchScript(scriptUrl)
-    -- Закрываем и полностью удаляем интерфейс Fluent
     Fluent:Destroy()
     
-    -- Запускаем выбранный скрипт
     local runSuccess, runError = pcall(function()
         loadstring(game:HttpGet(scriptUrl))()
     end)
@@ -64,15 +61,16 @@ local function launchScript(scriptUrl)
     end
 end
 
--- Динамически создаем кнопки на основе твоего JSON
-Window:SelectTab(Tabs.Scripts)
+-- Динамически создаем кнопки
+Window:SelectTab(1) -- Выбираем первую вкладку по индексу
 
 local count = 0
 for gameName, scriptUrl in pairs(scriptList) do
     count = count + 1
+    -- ИСПРАВЛЕНО: Метод называется AddButton, структура параметров передается корректно
     Tabs.Scripts:AddButton({
         Title = gameName,
-        Description = "Нажми, чтобы запустить скрипт для " .. gameName,
+        Description = "Запустить скрипт для " .. gameName,
         Callback = function()
             launchScript(scriptUrl)
         end
@@ -83,13 +81,13 @@ end
 if count == 0 then
     Tabs.Scripts:AddParagraph({
         Title = "Пусто",
-        Content = "Нет доступных скриптов."
+        Content = "В файле scripts.json нет доступных скриптов."
     })
 end
 
--- Уведомление об успешном запуске хаба
+-- Уведомление об успешном запуске
 Fluent:Notify({
-    Title = "1334 Hub",
+    Title = "Mishik Hub",
     Content = "Список скриптов успешно загружен!",
     Duration = 5
 })
