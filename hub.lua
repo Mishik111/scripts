@@ -3,10 +3,10 @@ local HttpService = game:GetService("HttpService")
 -- Ссылка на твой JSON-файл
 local JSON_URL = "https://raw.githubusercontent.com/Mishik111/scripts/refs/heads/main/scripts.json"
 
--- Загрузка библиотеки Fluent
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+-- Загрузка библиотеки Rayfield
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Загрузка данных с GitHub
+-- Получаем данные с GitHub
 local success, result = pcall(function()
     return game:HttpGet(JSON_URL)
 end)
@@ -16,7 +16,7 @@ if not success then
     return
 end
 
--- Декодирование JSON
+-- Декодируем JSON в таблицу Lua
 local scriptList = {}
 local decodeSuccess, decodeResult = pcall(function()
     return HttpService:JSONDecode(result)
@@ -25,78 +25,62 @@ end)
 if decodeSuccess then
     scriptList = decodeResult
 else
-    warn("Ошибка парсинга JSON!")
+    warn("Ошибка парсинга JSON. Проверь синтаксис файла!")
     return
 end
 
--- Создаем главное окно
-local Window = Fluent:CreateWindow({
-    Title = "Mishik Hub",
-    SubTitle = "by Mishik111",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(580, 460),
-    Acrylic = true,
-    Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.LeftControl
+-- Создаем главное окно хаба
+local Window = Rayfield:CreateWindow({
+    Name = "Mishik Hub",
+    LoadingTitle = "Загрузка хаба...",
+    LoadingSubtitle = "by Mishik111",
+    ConfigurationSaving = {
+        Enabled = false
+    },
+    KeySystem = false -- Ключ не нужен
 })
 
--- Автоматическое определение правильного метода для создания вкладки
-local Tabs = {}
-if Window.NewTab then
-    Tabs.Scripts = Window:NewTab({ Title = "Игры / Скрипты", Icon = "gamepad" })
-elseif Window.CreateTab then
-    Tabs.Scripts = Window:CreateTab({ Title = "Игры / Скрипты", Icon = "gamepad" })
-else
-    warn("Критическая ошибка: Не найден метод создания вкладок в этой версии Fluent!")
-    return
-end
+-- Создаем вкладку для скриптов
+local ScriptTab = Window:CreateTab("Игры / Скрипты", 4483362458) -- Иконка gamepad
 
--- Функция запуска выбранного скрипта
+-- Функция для закрытия хаба и запуска выбранного скрипта
 local function launchScript(scriptUrl)
-    -- Закрываем UI
-    if Fluent.Destroy then
-        Fluent:Destroy()
-    elseif Window.Destroy then
-        Window:Destroy()
-    end
+    -- Полностью уничтожаем интерфейс хаба
+    Rayfield:Destroy()
     
-    -- Выполняем код
+    -- Запускаем скрипт в отдельном потоке, чтобы ничего не зависло
     task.spawn(function()
         local runSuccess, runError = pcall(function()
             loadstring(game:HttpGet(scriptUrl))()
         end)
+        
         if not runSuccess then
-            warn("Ошибка при выполнении скрипта: " .. tostring(runError))
+            warn("Ошибка при запуске скрипта игры: " .. tostring(runError))
         end
     end)
 end
 
--- Безопасно выбираем первую вкладку
-pcall(function() Window:SelectTab(1) end)
-
--- Создаем кнопки для каждой игры
+-- Динамически создаем кнопки на основе твоего JSON
 local count = 0
 for gameName, scriptUrl in pairs(scriptList) do
     count = count + 1
-    Tabs.Scripts:AddButton({
-        Title = gameName,
-        Description = "Запустить скрипт для " .. gameName,
+    ScriptTab:CreateButton({
+        Name = gameName,
         Callback = function()
             launchScript(scriptUrl)
-        end
+        end,
     })
 end
 
+-- Если JSON пустой
 if count == 0 then
-    Tabs.Scripts:AddParagraph({
-        Title = "Пусто",
-        Content = "В файле scripts.json нет доступных скриптов."
-    })
+    ScriptTab:CreateLabel("В файле scripts.json нет доступных скриптов.")
 end
 
--- Уведомление
-Fluent:Notify({
+-- Уведомление об успешном старте
+Rayfield:Notify({
     Title = "Mishik Hub",
-    Content = "Скрипты успешно загружены!",
-    Duration = 5
+    Content = "Все скрипты успешно загружены с GitHub!",
+    Duration = 5,
+    Image = 4483362458,
 })
