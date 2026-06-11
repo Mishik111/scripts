@@ -28,12 +28,11 @@ else
     return
 end
 
--- Создаем интерфейс вручную (Защита от поломок библиотек)
+-- Создаем интерфейс
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "MishikHub_Custom"
 ScreenGui.ResetOnSpawn = false
 
--- Проверка прав на CoreGui, иначе фолбек в PlayerGui
 pcall(function() ScreenGui.Parent = CoreGui end)
 if not ScreenGui.Parent then
     ScreenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
@@ -65,7 +64,7 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Font = Enum.Font.GothamBold
 Title.Parent = MainFrame
 
--- Кнопка закрытия (Крестик)
+-- Кнопка закрытия
 local CloseButton = Instance.new("TextButton")
 CloseButton.Name = "CloseButton"
 CloseButton.Size = UDim2.new(0, 30, 0, 30)
@@ -81,7 +80,7 @@ CloseButton.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- Зона прокрутки для кнопок игр
+-- Зона прокрутки
 local ScrollingFrame = Instance.new("ScrollingFrame")
 ScrollingFrame.Name = "ScriptList"
 ScrollingFrame.Size = UDim2.new(1, -20, 1, -65)
@@ -97,21 +96,37 @@ UIListLayout.Padding = UDim.new(0, 6)
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Parent = ScrollingFrame
 
--- Функция скрытия хаба и мгновенного запуска чита
+-- ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАПУСКА С ЗАЩИТОЙ И ЛОГИРОВАНИЕМ
 local function launchScript(url)
-    ScreenGui:Destroy() -- Хаб полностью и бесследно пропадает
+    ScreenGui:Destroy() -- Скрываем меню сразу, как просил
     
     task.spawn(function()
-        local runSuccess, runError = pcall(function()
-            loadstring(game:HttpGet(url))()
+        -- 1. Проверяем скачивание кода скрипта
+        local getSuccess, scriptCode = pcall(function()
+            return game:HttpGet(url)
         end)
+        
+        if not getSuccess or not scriptCode or scriptCode == "" or string.match(scriptCode, "404: Not Found") then
+            warn("🚨 ХАБ ОШИБКА: Не удалось скачать скрипт! Проверь ссылку в JSON. Ссылка: " .. tostring(url))
+            return
+        end
+        
+        -- 2. Проверяем компиляцию (синтаксис кода)
+        local func, compileError = loadstring(scriptCode)
+        if not func then
+            warn("🚨 ХАБ ОШИБКА СИНТАКСИСА: В самом чите по ссылке есть ошибка кода! Текст ошибки: " .. tostring(compileError))
+            return
+        end
+        
+        -- 3. Если всё ок — запускаем
+        local runSuccess, runError = pcall(func)
         if not runSuccess then
-            warn("Ошибка при активации выбранного скрипта: " .. tostring(runError))
+            warn("🚨 ХАБ ОШИБКА ВНУТРИ СКРИПТА: Чит запустился, но сломался во время работы: " .. tostring(runError))
         end
     end)
 end
 
--- Динамически создаем красивые кнопки под каждую игру из твоего JSON
+-- Создаем кнопки для игр
 for gameName, scriptUrl in pairs(scriptList) do
     local Button = Instance.new("TextButton")
     Button.Size = UDim2.new(1, -6, 0, 38)
@@ -127,7 +142,6 @@ for gameName, scriptUrl in pairs(scriptList) do
     BtnCorner.CornerRadius = UDim.new(0, 6)
     BtnCorner.Parent = Button
 
-    -- Анимация наведения мыши (подсветка кнопки)
     Button.MouseEnter:Connect(function()
         TweenService:Create(Button, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(55, 55, 65)}):Play()
     end)
@@ -135,18 +149,16 @@ for gameName, scriptUrl in pairs(scriptList) do
         TweenService:Create(Button, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(42, 42, 48)}):Play()
     end)
 
-    -- Клик: закрыть хаб + включить скрипт
     Button.MouseButton1Click:Connect(function()
         launchScript(scriptUrl)
     end)
 end
 
--- Автоматический расчет длины скролла под количество кнопок
 UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 5)
 end)
 
--- Система перетаскивания (Drag) хаба мышкой за любую его часть
+-- Система перетаскивания (Drag)
 local UserInputService = game:GetService("UserInputService")
 local dragging, dragInput, dragStart, startPos
 
