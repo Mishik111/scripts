@@ -32,8 +32,8 @@ end
 
 -- Создаем главное окно хаба
 local Window = Fluent:CreateWindow({
-    Title = "Mishik Hub",
-    SubTitle = "by Mishik111",
+    Title = "1337 Hub",
+    SubTitle = "by 1337gta5rp_lame",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
@@ -83,13 +83,13 @@ end
 if count == 0 then
     Tabs.Scripts:AddParagraph({
         Title = "Пусто",
-        Content = "В файле scripts.json нет доступных скриптов."
+        Content = "Нет доступных скриптов."
     })
 end
 
 -- Уведомление об успешном запуске хаба
 Fluent:Notify({
-    Title = "Mishik Hub",
+    Title = "1334 Hub",
     Content = "Список скриптов успешно загружен!",
     Duration = 5
 })
