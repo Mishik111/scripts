@@ -107,8 +107,8 @@ function Menu.new(config)
 	}, self.Root)
 	corner(self.Panel, 5)
 
-	-- Top artwork strip from the HTML. Set config.TopImage to a Roblox asset URL/id
-	-- to use your own uploaded artwork.
+	-- Top artwork strip. The original HTML uses a remote image here; Roblox cannot
+	-- safely depend on that remote URL, so this recreates the graphic as native UI.
 	self.TopArt = make("Frame", {
 		Size = UDim2.new(1, 0, 0, 47),
 		BackgroundColor3 = COLORS.Background,
@@ -116,13 +116,56 @@ function Menu.new(config)
 		ClipsDescendants = true,
 	}, self.Panel)
 
+	local topFade = make("UIGradient", {
+		Rotation = 0,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(4, 4, 4)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(9, 9, 11)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(4, 4, 4)),
+		}),
+	}, self.TopArt)
+
+	local artCenter = make("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(185, 1),
+		BackgroundColor3 = Color3.fromRGB(46, 47, 52),
+		BorderSizePixel = 0,
+	}, self.TopArt)
+
+	for i = -2, 2 do
+		local line = make("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0.5, i * 32, 0.5, 0),
+			Size = UDim2.fromOffset(1, 56),
+			Rotation = 45,
+			BackgroundColor3 = Color3.fromRGB(35, 36, 40),
+			BorderSizePixel = 0,
+		}, self.TopArt)
+	end
+
+	local logoBox = make("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(34, 24),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+	}, self.TopArt)
+	stroke(logoBox, Color3.fromRGB(51, 52, 57), 1, 0.05)
+
+	local logo = makeLabel(logoBox, "✦", 15, Color3.fromRGB(210, 210, 214))
+	logo.Size = UDim2.fromScale(1, 1)
+	logo.TextXAlignment = Enum.TextXAlignment.Center
+	logo.TextYAlignment = Enum.TextYAlignment.Center
+
 	if config.TopImage then
-		self.TopImage = make("ImageLabel", {
+		local img = make("ImageLabel", {
 			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
 			Image = config.TopImage,
 			ScaleType = Enum.ScaleType.Crop,
 		}, self.TopArt)
+		img.ZIndex = 10
 	end
 
 	-- Sidebar
@@ -304,10 +347,65 @@ function Menu.new(config)
 		self:_createOptionCell(i, option)
 	end
 
+	self:_buildBottomDecoration()
 	self:_enableDragging()
 	self:SetSideIndex(2)
 
 	return self
+end
+
+function Menu:_buildBottomDecoration()
+	local deco = make("Frame", {
+		Position = UDim2.new(0, 51, 1, -33),
+		Size = UDim2.new(1, -72, 0, 23),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+	}, self.Panel)
+
+	local topLine = make("Frame", {
+		Size = UDim2.new(1, 0, 0, 1),
+		BackgroundColor3 = Color3.fromRGB(37, 38, 42),
+		BorderSizePixel = 0,
+	}, deco)
+
+	local function diag(x, side)
+		local l = make("Frame", {
+			Position = UDim2.fromOffset(x, 0),
+			Size = UDim2.fromOffset(1, 28),
+			BackgroundColor3 = Color3.fromRGB(37, 38, 42),
+			BorderSizePixel = 0,
+			Rotation = side,
+			AnchorPoint = Vector2.new(0, 0),
+		}, deco)
+		return l
+	end
+	diag(50, -45)
+	diag(math.max(80, deco.AbsoluteSize.X - 83), 45)
+
+	for _, x in ipairs({34, 116, 0}) do
+		if x ~= 0 then
+			make("Frame", {
+				Position = UDim2.fromOffset(x, 0),
+				Size = UDim2.fromOffset(1, 8),
+				BackgroundColor3 = Color3.fromRGB(46, 47, 50),
+				BorderSizePixel = 0,
+			}, deco)
+		end
+	end
+	local rightTicks = {deco.Size.X.Offset - 107, deco.Size.X.Offset - 37}
+	for _, x in ipairs(rightTicks) do
+		make("Frame", {
+			Position = UDim2.fromOffset(x, 0),
+			Size = UDim2.fromOffset(1, 8),
+			BackgroundColor3 = Color3.fromRGB(46, 47, 50),
+			BorderSizePixel = 0,
+		}, deco)
+	end
+
+	local footer = makeLabel(self.Panel, "SHOOTING UI  •  465 × 368", 7, Color3.fromRGB(78, 79, 85))
+	footer.Position = UDim2.new(1, -158, 1, -18)
+	footer.Size = UDim2.fromOffset(145, 10)
+	footer.TextXAlignment = Enum.TextXAlignment.Right
 end
 
 function Menu:_createSlider(y: number, labelY: number, label: string, defaultText: number, value: number, maxValue: number, key: string)
@@ -317,10 +415,10 @@ function Menu:_createSlider(y: number, labelY: number, label: string, defaultTex
 		BackgroundTransparency = 1,
 	}, self.Content)
 
-	local labelText = makeLabel(section, label, 9, Color3.fromRGB(225, 225, 228))
+	local labelText = makeLabel(section, label, 8, Color3.fromRGB(225, 225, 228))
 	labelText.Size = UDim2.new(1, -80, 0, 14)
 
-	local valueText = makeLabel(section, string.format("%.2f", value), 9, Color3.fromRGB(233, 233, 235))
+	local valueText = makeLabel(section, string.format("%.2f", value), 8, Color3.fromRGB(233, 233, 235))
 	valueText.AnchorPoint = Vector2.new(1, 0)
 	valueText.Position = UDim2.new(1, 0, 0, 0)
 	valueText.Size = UDim2.fromOffset(60, 14)
@@ -413,7 +511,7 @@ function Menu:_createOptionCell(index: number, option)
 
 	local label = makeLabel(cell, option.label or ("OPTION " .. index), 9, COLORS.White)
 	label.Position = UDim2.fromOffset(8, 0)
-	label.Size = UDim2.new(1, -48, 1, 0)
+	label.Size = UDim2.new(1, -52, 1, 0)
 
 	if option.type == "dropdown" then
 		local drop = make("TextButton", {
@@ -466,6 +564,19 @@ function Menu:_createOptionCell(index: number, option)
 			self:SetOption(index, not state.value)
 		end)
 	end
+end
+
+function Menu:ResetToHtmlDefaults()
+	self:SetMainEnabled(true)
+	self:SetSlider("Radius", 40)
+	self:SetSlider("Smoothness", 1)
+	for i, option in ipairs(self.Options) do
+		if option.button and i >= 3 then
+			self:SetOption(i, i == 3)
+		end
+	end
+	self:SetTab(1)
+	self:SetSideIndex(2)
 end
 
 function Menu:SetMainEnabled(enabled: boolean)
