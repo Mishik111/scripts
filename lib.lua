@@ -1,6 +1,7 @@
 --!strict
 -- ShootingMenu.lua
 -- UI-only recreation of the uploaded 465x368 HTML menu for Roblox.
+-- Exact artwork usage: Menu.new({ TopImage = "rbxassetid://YOUR_UPLOADED_IMAGE_ID" })
 -- This module creates the interface; it does NOT implement aimbot, silent-aim,
 -- triggerbot, damage, or exploit functionality.
 
@@ -107,8 +108,10 @@ function Menu.new(config)
 	}, self.Root)
 	corner(self.Panel, 5)
 
-	-- Top artwork strip. The original HTML uses a remote image here; Roblox cannot
-	-- safely depend on that remote URL, so this recreates the graphic as native UI.
+	-- Exact top artwork hook.
+	-- The original HTML points at https://i.imgur.com/v8LYnia.png.
+	-- Roblox ImageLabel cannot use that external URL directly; upload the PNG
+	-- to Roblox as an image/decal and pass the resulting rbxassetid here.
 	self.TopArt = make("Frame", {
 		Size = UDim2.new(1, 0, 0, 47),
 		BackgroundColor3 = COLORS.Background,
@@ -116,56 +119,23 @@ function Menu.new(config)
 		ClipsDescendants = true,
 	}, self.Panel)
 
-	local topFade = make("UIGradient", {
-		Rotation = 0,
-		Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(4, 4, 4)),
-			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(9, 9, 11)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(4, 4, 4)),
-		}),
-	}, self.TopArt)
-
-	local artCenter = make("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(185, 1),
-		BackgroundColor3 = Color3.fromRGB(46, 47, 52),
-		BorderSizePixel = 0,
-	}, self.TopArt)
-
-	for i = -2, 2 do
-		local line = make("Frame", {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(0.5, i * 32, 0.5, 0),
-			Size = UDim2.fromOffset(1, 56),
-			Rotation = 45,
-			BackgroundColor3 = Color3.fromRGB(35, 36, 40),
-			BorderSizePixel = 0,
-		}, self.TopArt)
-	end
-
-	local logoBox = make("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(34, 24),
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-	}, self.TopArt)
-	stroke(logoBox, Color3.fromRGB(51, 52, 57), 1, 0.05)
-
-	local logo = makeLabel(logoBox, "✦", 15, Color3.fromRGB(210, 210, 214))
-	logo.Size = UDim2.fromScale(1, 1)
-	logo.TextXAlignment = Enum.TextXAlignment.Center
-	logo.TextYAlignment = Enum.TextYAlignment.Center
-
 	if config.TopImage then
-		local img = make("ImageLabel", {
+		self.TopImage = make("ImageLabel", {
 			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
-			Image = config.TopImage,
+			Image = config.TopImage, -- e.g. "rbxassetid://123456789"
 			ScaleType = Enum.ScaleType.Crop,
+			ResampleMode = Enum.ResamplerMode.Default,
 		}, self.TopArt)
-		img.ZIndex = 10
+	else
+		local placeholder = make("TextLabel", {
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+			Text = "UPLOAD v8LYnia.png → set TopImage",
+			TextColor3 = Color3.fromRGB(80, 80, 86),
+			TextSize = 8,
+			Font = Enum.Font.Arial,
+		}, self.TopArt)
 	end
 
 	-- Sidebar
